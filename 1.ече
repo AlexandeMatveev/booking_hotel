@@ -1,0 +1,65 @@
+
+database 
+
+from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
+from sqlalchemy.orm import DeclarativeBase, sessionmaker
+
+DB_HOST = "localhost"
+DB_PORT = 5432
+DB_USER = "postgres"
+DB_PASS = "postgres"
+DB_NAME = "postgres"
+
+DATABASE_URL = f"postgresql+asyncpg://{DB_USER}:{DB_PASS}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
+engine = create_async_engine(DATABASE_URL)
+
+async_session_maker = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
+
+class Base(DeclarativeBase):
+    pass
+
+
+--------------------------
+
+model
+
+from sqlalchemy import JSON, Column, Integer, String
+from app.database import Base
+
+class Hotels(Base):
+    __tablename__ = "hotels"
+
+    id = Column(Integer, primary_key=True)
+    name = Column(String, nullable=False)
+    location = Column(String, nullable=False)
+    services = Column(JSON)
+    rooms_quantity = Column(Integer, nullable=False)
+    image_id = Column(Integer)
+
+alembic init migrations
+
+
+alembic revision --autogenerate -m "initial migration"
+
+
+
+INSERT INTO rooms (hotel_id, name, price, quantity, services, image_id) VALUES
+(1, 'Улучшенный с террасой и видом на озеро', 24500, 5, '["Бесплатный Wi-Fi", "Кондиционер (с климат-контролем)"]', 7),
+(1, 'Делокс Плюс', 22450, 10, '["Бесплатный Wi-Fi", "Кондиционер"]', 8),
+(2, 'Номер на 2-х человек', 4570, 15, '["Wi-Fi"]', 9),
+(2, 'Номер на 3-х человек', 4350, 8, '["Wi-Fi"]', 10),
+(3, 'Номер полулюкс семейный с 1 двуспальной кроватью', 7080, 20, '["Холодильник"]', 11),
+(3, '2-комнатный номер люкс комфорт', 9815, 10, '["Wi-Fi"]', 12),
+(4, 'Стандарт двухместный', 4300, 20, '["Бесплатный Wi-Fi", "Холодильник"]', 13),
+(4, 'Стандарт улучшенный ПЛЮС', 4700, 35, '["Бесплатный Wi-Fi", "Холодильник", "Ванная комната", "Кондиционер"]', 14),
+(5, 'Номер стандарт с 2 односпальными кроватями (с завтраком)', 5000, 15, '["Wi-Fi"]', 15),
+(5, 'Номер полулюкс премиум (с завтраком)', 8000, 7, '["Wi-Fi"]', 16),
+(6, 'Стандарт (типовой корпус)', 8125, 45, '["Wi-Fi"]', 17);
+
+INSERT INTO users (id, email, hashed_password) VALUES
+(1, 'fedor@moloko.ru', 'tut_budet_hashed_password_1'),
+(2, 'sharik@moloko.ru', 'tut_budet_hashed_password_2');
+
+INSERT INTO bookings (room_id, user_id, date_from, date_to, price) VALUES
+(1, 1, '2023-06-15', '2023-06-30', 24500),
+(7, 2, '2023-06-25', '2023-07-10', 4300);

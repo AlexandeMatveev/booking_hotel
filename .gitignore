@@ -1,0 +1,16 @@
+# .gitignore
+.env
+.env.local
+.env.development
+.env.production
+.env.test
+*.env
+config/secrets.yml
+credentials.json
+
+venv/
+env/
+ENV/
+virtualenv/
+.env/
+.venv/
