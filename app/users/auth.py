@@ -3,6 +3,7 @@ from datetime import datetime, timedelta, timezone
 from jose import jwt
 from app.users.dao import UsersDAO
 from app.users.schema import SUserAuth
+from app.config import settings
 # Используем только argon2
 pwd_context = CryptContext(schemes=["argon2"], deprecated="auto")
 
@@ -18,7 +19,7 @@ def create_access_token(data: dict)-> str:
     expire = datetime.utcnow() + timedelta(minutes=30)
     to_encode.update({"exp": expire})
     encoded_jwt = jwt.encode(
-        to_encode, "asdlajsdasASDASD","HS256"
+        to_encode, settings.SECRET_KEY,settings.ALGORITHM
     )
 
     return encoded_jwt
