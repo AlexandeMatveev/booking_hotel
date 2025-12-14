@@ -1,7 +1,7 @@
 
 from datetime import datetime
 from app.users.dao import UsersDAO
-from fastapi import Request,HTTPException,Depends
+from fastapi import Request,Depends
 from jose import jwt,JWTError
 
 from exceptions import TokenExpiredException,TokenAbsentException,IncorrectFormTokenException,UserIsNotPresentException
