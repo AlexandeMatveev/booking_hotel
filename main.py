@@ -1,5 +1,5 @@
 
-
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi import FastAPI,Query,Depends
 from typing import Optional 
 from datetime import date
@@ -49,15 +49,14 @@ def get_hotels(
     
 
 
-class SBooking(BaseModel):
-    room_id: int
-    date_from:date
-    date_to:date
-
-
-@app.post("/bookings")
-def add_booking(booking:SBooking):
-    pass
 
 
 
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173"],  # ← Должен быть точный URL фронтенда, НЕ "*"
+    allow_credentials=True,                   # ← Разрешаем куки
+    allow_methods=["*"],                      # Разрешаем все методы (GET, POST, OPTIONS и т.д.)
+    allow_headers=["*"],                      # Разрешаем все заголовки
+)
