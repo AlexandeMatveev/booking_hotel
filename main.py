@@ -8,14 +8,14 @@ from pydantic import BaseModel
 from app.bookings.router import router as router_bookings
 from app.users.router import router as router_users
 
-
-
+from app.hotels.models import Hotel
+from app.database import async_session_maker
 app = FastAPI()
 
 app.include_router(router_users)
 app.include_router(router_bookings)
 
-
+from sqlalchemy import select
 
 
 class HotelSearchArgs:
@@ -42,10 +42,12 @@ class SHotel(BaseModel):
 
 
 @app.get("/hotels")
-def get_hotels(
-    search_args:HotelSearchArgs=Depends()
-):
-    return search_args
+async def get_hotels():
+    async with async_session_maker() as session:
+        query = select(Hotel).limit(3)
+        result = await session.execute(query)
+        hotels = result.scalars().all()
+        return hotels
     
 
 

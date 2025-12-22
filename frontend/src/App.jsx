@@ -1,10 +1,9 @@
-
 // src/App.jsx
-
 import { useState, useEffect } from 'react';
 import Login from './components/Login';
 import Profile from './components/Profile';
-import SearchHotels from './components/SearchHotels';  // ← новая страница
+import SearchHotels from './components/SearchHotels';
+import HomePage from './components/HomePage'; // ← импортируем компонент
 
 export default function App() {
   const [user, setUser] = useState(null);
@@ -65,7 +64,9 @@ export default function App() {
         )}
       </nav>
 
+      {/* Изменяем логику отображения страниц */}
       {page === 'home' && !user && <Login onLogin={handleLogin} />}
+      {page === 'home' && user && <HomePage />} {/* ← показываем HomePage если пользователь авторизован */}
       {page === 'profile' && user && <Profile user={user} onLogout={handleLogout} />}
       {page === 'search' && <SearchHotels />}
     </div>
