@@ -18,6 +18,16 @@ app.include_router(router_bookings)
 from sqlalchemy import select
 
 
+
+from fastapi_cache import FastAPICache
+from fastapi_cache.backends.redis import RedisBackend   
+
+from fastapi_cache.decorator import cache
+
+from redis import asyncio as aioredis
+
+
+
 class HotelSearchArgs:
     def __init__(
         self,
@@ -42,6 +52,7 @@ class SHotel(BaseModel):
 
 
 @app.get("/hotels")
+@cache(expire=30)
 async def get_hotels():
     async with async_session_maker() as session:
         query = select(Hotel).limit(3)
@@ -62,3 +73,15 @@ app.add_middleware(
     allow_methods=["*"],                      # Разрешаем все методы (GET, POST, OPTIONS и т.д.)
     allow_headers=["*"],                      # Разрешаем все заголовки
 )
+
+
+
+
+
+@app.on_event("startup")
+async def startup():
+    redis = aioredis.from_url("redis://localhost:6379", encoding="utf8", decode_responses=True)
+    FastAPICache.init(RedisBackend(redis), prefix="cache")
+
+
+
