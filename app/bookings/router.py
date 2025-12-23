@@ -1,12 +1,19 @@
 
 
 from datetime import date
+from fastapi import HTTPException
 from app.bookings.dao import BookingDAO
+from app.hotels.models import Rooms
 from app.users.models import Users
 from fastapi import APIRouter,Request,Depends
 from app.users.dependencies import get_current_user
 
 from exceptions import RoomCannotBookedException
+
+from app.database import async_session_maker
+from app.bookings.models import Bookings
+
+from sqlalchemy import select
 from app.bookings.schemas import SBOoking
 router = APIRouter(
 
@@ -20,19 +27,52 @@ router = APIRouter(
 
 
 
-@router.get("")
+@router.get("g")
 async def get_booking(user:Users =Depends(get_current_user)) -> list[SBOoking]:
     return await BookingDAO.find_all(user_id = user.id)
 
 
 
-@router.post("booking")
+@router.post("", response_model=SBOoking)
 async def create_booking(
-    room_id:int,date_from:date,date_to:date,
-    booking:SBOoking, user:Users =Depends(get_current_user),
-                         
+    room_id: int,
+    date_from: date,
+    date_to: date,
+    user=Depends(get_current_user)
 ):
-    booking = await BookingDAO.create(user.id,room_id,date_from,date_to)
-    if not booking:
-        raise RoomCannotBookedException
+    # Проверка: дата заезда раньше выезда
+    if date_from >= date_to:
+        raise HTTPException(status_code=400, detail="Дата заезда должна быть раньше даты выезда")
 
+    async with async_session_maker() as session:
+        # Проверяем, свободен ли номер на указанные даты
+        result = await session.execute(
+            select(Bookings).where(
+                Bookings.room_id == room_id,
+                Bookings.date_from <= date_to,
+                Bookings.date_to >= date_from
+            )
+        )
+        if result.scalar():
+            raise HTTPException(status_code=409, detail="Номер уже забронирован на эти даты")
+
+        # Получаем номер по ID
+        room = await session.get(Rooms, room_id)
+        if not room:
+            raise HTTPException(status_code=404, detail="Номер не найден")
+
+        # Рассчитываем стоимость
+        total_days = (date_to - date_from).days
+        total_cost = total_days * room.price
+
+        # Создаём бронь
+        booking = await BookingDAO.add(
+            user_id=user.id,
+            room_id=room_id,
+            date_from=date_from,
+            date_to=date_to,
+            price=room.price,
+            #total_cost=total_cost
+        )
+
+        return booking

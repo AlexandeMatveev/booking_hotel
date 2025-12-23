@@ -1,107 +1,55 @@
-
 from datetime import date
 from app.dao.base import BaseDAO
-
 from app.bookings.models import Bookings
-
-
-
-
-
-from sqlalchemy import select,delete,insert,func,and_,or_,engine
-
+from app.hotels.models import Rooms  # ← было Rooms, но модель называется Room
+from sqlalchemy import select, insert, func, and_, or_
 from app.database import async_session_maker
-
-
 
 class BookingDAO(BaseDAO):
     model = Bookings
 
-
-
     @classmethod
-    async def add_bookings(
-     cls,
-     user_id:int,
-     room_id:int,
-     date_from:date,
-     date_to:date,
-
-    ):
-     """
-        
-
-    WITH booked_rooms AS (
-        SELECT * FROM bookings
-        WHERE room_id = 1 AND
-        (date_from >= '2023-05-15' AND date_from <= '2023-06-20') OR
-        (date_from <= '2023-05-15' AND date_to > '2023-05-15')
-    )
-    SELECT rooms.quantity - COUNT(booked_rooms.room_id) FROM rooms
-    LEFT JOIN booked_rooms ON booked_rooms.room_id = rooms.id
-    WHERE rooms.id = 1
-    GROUP BY rooms.quantity, booked_rooms.room_id
-    """
-     
-     async with async_session_maker() as session:
-        booked_rooms = select(Bookings).where(
-            and_(
-                Bookings.room_id == 1,
-                or_(
+    async def add_bookings(cls, user_id: int, room_id: int, date_from: date, date_to: date):
+        """
+        Проверяет, есть ли свободные места, и создаёт бронь
+        """
+        async with async_session_maker() as session:
+            # Проверяем, есть ли уже забронированные номера на эти даты
+            booked_rooms = await session.execute(
+                select(func.count())
+                .select_from(Bookings)
+                .where(
                     and_(
-                      Bookings.date_from >= date_from,
-                   Bookings.date_from <= date_to
-                    ),
-                    and_(
-                        Bookings.date_from <= date_from,
-                        Bookings.date_to > date_from
+                        Bookings.room_id == room_id,
+                        Bookings.date_from <= date_to,
+                        Bookings.date_to >= date_from,
+                    )
                 )
+            )
+            booked_count = booked_rooms.scalar()
 
-             )
-             )
-         ).cte("booked_rooms")
+            # Получаем общее количество номеров
+            room = await session.get(Rooms, room_id)
+            if not room:
+                return None
 
+            # Проверяем доступность
+            if booked_count >= room.quantity:
+                return None  # Нет свободных номеров
 
-        rooms_left = select(Rooms.quantity - func.count(
-        booked_rooms.c.room_id)).select_from(Rooms).join(
-               booked_rooms,booked_rooms.c.room_id == Rooms.id
-        ).where(Rooms.id==1).group_by(Rooms.quantity,booked_rooms.c.room_id).scalar()
+            # Получаем цену
+            price = room.price
 
-     print(rooms_left.compile(engine,compile_kwargs={"literal_binds":True}))
-
-     rooms_left = await session.execute(rooms_left)
-     print(rooms_left.scalar())
-
-     if rooms_left > 0:
-            get_price = select(Rooms.price).filter_by(id=room_id)
-            price = await session.execute(get_price)
-            price: int = price.scalar()
-            add_booking = insert(Bookings).values(
+            # Создаём бронь
+            new_booking = insert(Bookings).values(
                 room_id=room_id,
                 user_id=user_id,
                 date_from=date_from,
                 date_to=date_to,
                 price=price,
             ).returning(Bookings)
-            new_booking= await session.execute(add_booking)
+
+            result = await session.execute(new_booking)
             await session.commit()
-            return new_booking.scalar()
-     else:
-         
-         return None
 
-
-
-
-
-
-
-
-     
-
-
-        
-
-
-
-    
+            return result.scalar()  # ✅ возвращаем объект брони
