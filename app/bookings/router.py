@@ -2,8 +2,10 @@
 
 from datetime import date
 from fastapi import HTTPException
+from pydantic import parse_obj_as
 from app.bookings.dao import BookingDAO
 from app.hotels.models import Rooms
+from app.tasks.tasks import send_booking_email
 from app.users.models import Users
 from fastapi import APIRouter,Request,Depends
 from app.users.dependencies import get_current_user
@@ -74,5 +76,16 @@ async def create_booking(
             price=room.price,
             #total_cost=total_cost
         )
+        send_booking_email.delay(booking,user.email)
 
         return booking
+    
+@router.post("r")
+async def add_booking(
+        room_id: int, date_from: date, date_to: date,
+        user: Users = Depends(get_current_user),
+    ):
+        booking = await BookingDAO.add_bookings(user.id, room_id, date_from, date_to)
+        booking_dict = parse_obj_as(SBOoking, booking).dict()
+        send_booking_email.delay(booking_dict, user.email)
+        return booking_dict
