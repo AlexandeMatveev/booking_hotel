@@ -18,6 +18,7 @@ class BaseDAO:
             query =select(cls.model).filter_by(id=model_id)
             result =await session.execute(query)
             return result.scalar_one_or_none()
+        
 
 
 

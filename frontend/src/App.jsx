@@ -2,13 +2,16 @@
 import { useState, useEffect } from 'react';
 import Login from './components/Login';
 import Profile from './components/Profile';
-import SearchHotels from './components/SearchHotels';
-import HomePage from './components/HomePage'; // ← импортируем компонент
+import HomePage from './components/HomePage';
+import MyBookings from './components/MyBookings';
+import BookingForm from './components/BookingForm';
 
 export default function App() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState('home');
+  const [showBookingForm, setShowBookingForm] = useState(false);
+  const [selectedHotel, setSelectedHotel] = useState(null);
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -31,7 +34,7 @@ export default function App() {
 
   const handleLogin = (userData) => {
     setUser(userData);
-    setPage('search');
+    setPage('home');
   };
 
   const handleLogout = async () => {
@@ -43,6 +46,28 @@ export default function App() {
     } catch (err) {}
     setUser(null);
     setPage('home');
+    setShowBookingForm(false);
+  };
+
+  const handleOpenBookingForm = (hotel) => {
+    if (!user) {
+      alert('Для бронирования необходимо войти в систему');
+      setPage('home');
+      return;
+    }
+    setSelectedHotel(hotel);
+    setShowBookingForm(true);
+  };
+
+  const handleCloseBookingForm = () => {
+    setShowBookingForm(false);
+    setSelectedHotel(null);
+  };
+
+  const handleBookingSuccess = () => {
+    alert('Бронирование успешно создано!');
+    handleCloseBookingForm();
+    setPage('bookings');
   };
 
   if (loading) return <div>Загрузка...</div>;
@@ -50,25 +75,36 @@ export default function App() {
   return (
     <div>
       <nav style={navStyle}>
-        <button onClick={() => setPage('home')}>Главная</button>
+        <button onClick={() => setPage('home')}>
+          {user ? '🏠 Главная' : '🏠 Войти'}
+        </button>
         {user && (
           <>
-            <button onClick={() => setPage('profile')}>Профиль</button>
-            <button onClick={() => setPage('search')}>Поиск отелей</button>
+            <button onClick={() => setPage('profile')}>👤 Профиль</button>
+            <button onClick={() => setPage('bookings')}>📋 Мои бронирования</button>
           </>
         )}
         {user ? (
-          <button onClick={handleLogout}>Выйти</button>
+          <button onClick={handleLogout}>🚪 Выйти</button>
         ) : (
-          <button onClick={() => setPage('home')}>Войти</button>
+          <button onClick={() => setPage('home')}>🔑 Войти</button>
         )}
       </nav>
 
-      {/* Изменяем логику отображения страниц */}
+      {showBookingForm && selectedHotel && (
+        <BookingForm
+          hotelId={selectedHotel.id}
+          hotelPrice={selectedHotel.price_per_night}
+          hotelName={selectedHotel.name}
+          onClose={handleCloseBookingForm}
+          onSuccess={handleBookingSuccess}
+        />
+      )}
+
       {page === 'home' && !user && <Login onLogin={handleLogin} />}
-      {page === 'home' && user && <HomePage />} {/* ← показываем HomePage если пользователь авторизован */}
+      {page === 'home' && user && <HomePage onBookClick={handleOpenBookingForm} />}
       {page === 'profile' && user && <Profile user={user} onLogout={handleLogout} />}
-      {page === 'search' && <SearchHotels />}
+      {page === 'bookings' && user && <MyBookings />}
     </div>
   );
 }
@@ -78,5 +114,6 @@ const navStyle = {
   backgroundColor: '#007bff',
   display: 'flex',
   gap: '10px',
-  flexWrap: 'wrap'
+  flexWrap: 'wrap',
+  marginBottom: '20px',
 };
