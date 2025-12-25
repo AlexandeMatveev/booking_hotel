@@ -5,7 +5,7 @@ from typing import Optional
 from datetime import date
 from pydantic import BaseModel
 
-from app.admin.views import BookingsAdmin, UsersAdmin
+from app.admin.views import BookingsAdmin, HotelsAdmin, RoomsAdmin, UsersAdmin
 from app.bookings.router import router as router_bookings
 from app.users.models import Users
 from app.users.router import router as router_users
@@ -100,3 +100,7 @@ admin = Admin(app, engine)
 
 admin.add_view(UsersAdmin)
 admin.add_view(BookingsAdmin)
+
+
+admin.add_view(RoomsAdmin)
+admin.add_view(HotelsAdmin)
