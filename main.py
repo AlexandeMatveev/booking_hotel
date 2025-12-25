@@ -6,6 +6,7 @@ from datetime import date
 from pydantic import BaseModel
 
 from app.bookings.router import router as router_bookings
+from app.users.models import Users
 from app.users.router import router as router_users
 
 from app.hotels.models import Hotel
@@ -16,7 +17,7 @@ app.include_router(router_users)
 app.include_router(router_bookings)
 
 from sqlalchemy import select
-
+from sqladmin import Admin, ModelView
 
 
 from fastapi_cache import FastAPICache
@@ -26,7 +27,7 @@ from fastapi_cache.decorator import cache
 
 from redis import asyncio as aioredis
 
-
+from app.database import engine
 
 class HotelSearchArgs:
     def __init__(
@@ -85,3 +86,21 @@ async def startup():
 
 
 
+
+
+
+
+admin = Admin(app, engine)
+
+
+class UsersAdmin(ModelView, model=Users):
+    column_list = [Users.id, Users.email]
+    column_details_exclude_list = [Users.hashed_password]
+    can_delete = False
+    name = "Пользователь"
+    name_plural = "Пользователи"
+    icon = "fa-solid fa-user"
+
+
+
+admin.add_view(UsersAdmin)
