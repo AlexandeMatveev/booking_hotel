@@ -20,7 +20,7 @@ app.include_router(router_bookings)
 from sqlalchemy import select
 from sqladmin import Admin, ModelView
 
-
+from app.admin.auth import authentication_backend
 from fastapi_cache import FastAPICache
 from fastapi_cache.backends.redis import RedisBackend   
 
@@ -91,12 +91,12 @@ async def startup():
 
 
 
-admin = Admin(app, engine)
 
 
 
 
 
+admin = Admin(app, engine,authentication_backend = authentication_backend)
 
 admin.add_view(UsersAdmin)
 admin.add_view(BookingsAdmin)
@@ -104,3 +104,5 @@ admin.add_view(BookingsAdmin)
 
 admin.add_view(RoomsAdmin)
 admin.add_view(HotelsAdmin)
+
+
