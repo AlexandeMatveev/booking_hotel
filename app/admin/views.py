@@ -19,7 +19,7 @@ class UsersAdmin(ModelView, model=Users):
 
 
 class BookingsAdmin(ModelView, model=Bookings):
-    column_list = [c.name for c in Bookings.__table__.columns]
+    column_list = [c.name for c in Bookings.__table__.columns] + [Bookings.user]
     
     name = "Бронь"
     name_plural = "Брони"
