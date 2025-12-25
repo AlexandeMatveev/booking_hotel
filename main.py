@@ -5,6 +5,7 @@ from typing import Optional
 from datetime import date
 from pydantic import BaseModel
 
+from app.admin.views import BookingsAdmin, UsersAdmin
 from app.bookings.router import router as router_bookings
 from app.users.models import Users
 from app.users.router import router as router_users
@@ -93,14 +94,9 @@ async def startup():
 admin = Admin(app, engine)
 
 
-class UsersAdmin(ModelView, model=Users):
-    column_list = [Users.id, Users.email]
-    column_details_exclude_list = [Users.hashed_password]
-    can_delete = False
-    name = "Пользователь"
-    name_plural = "Пользователи"
-    icon = "fa-solid fa-user"
+
 
 
 
 admin.add_view(UsersAdmin)
+admin.add_view(BookingsAdmin)
